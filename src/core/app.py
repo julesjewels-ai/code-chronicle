@@ -1,27 +1,35 @@
-import subprocess
-from typing import List
+import re
+from src.core.git_manager import GitManager
 
 class CodeChronicleApp:
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
+        self.git_manager = GitManager(repo_path)
 
-    def _get_git_log(self, limit: int) -> List[str]:
-        cmd = ["git", "-C", self.repo_path, "log", f"-n {limit}", "--pretty=format:%h|%s"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return result.stdout.strip().split('\n')
-
-    def _mock_llm_insight(self, message: str) -> str:
+    def _mock_llm_insight(self, message: str, diff: str) -> str:
         # In a real app, this calls OpenAI/Anthropic
-        return f"LLM Analysis: This change evolves the codebase by '{message}'."
+        # This is a placeholder for more sophisticated analysis
+
+        files_changed = re.findall(r'diff --git a/(.+) b/', diff)
+        added_lines = len(re.findall(r'^\+', diff, re.MULTILINE))
+        removed_lines = len(re.findall(r'^-', diff, re.MULTILINE))
+
+        summary = (
+            f"LLM Analysis: The commit '{message}' modified {len(files_changed)} file(s). "
+            f"It added {added_lines} lines and removed {removed_lines} lines."
+        )
+        if files_changed:
+            summary += f"\n    Files changed: {', '.join(files_changed)}."
+
+        return summary
 
     def generate_narrative(self, limit: int = 5) -> str:
-        commits = self._get_git_log(limit)
+        commits = self.git_manager.get_commits(limit)
         narrative = []
         
-        for line in commits:
-            if not line: continue
-            hash_id, msg = line.split('|', 1)
-            insight = self._mock_llm_insight(msg)
-            narrative.append(f"Commit {hash_id}: {msg}\n  -> {insight}")
+        for commit in commits:
+            diff = self.git_manager.get_diff(commit['hash'])
+            insight = self._mock_llm_insight(commit['message'], diff)
+            narrative.append(f"Commit {commit['hash']}: {commit['message']}\n  -> {insight}")
             
         return "\n\n".join(narrative)
