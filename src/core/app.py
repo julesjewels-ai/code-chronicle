@@ -1,5 +1,5 @@
 import subprocess
-from typing import List
+from typing import List, Dict, Any
 
 class CodeChronicleApp:
     def __init__(self, repo_path: str):
@@ -12,16 +12,30 @@ class CodeChronicleApp:
 
     def _mock_llm_insight(self, message: str) -> str:
         # In a real app, this calls OpenAI/Anthropic
-        return f"LLM Analysis: This change evolves the codebase by '{message}'."
+        return f"This change evolves the codebase by '{message}'."
 
-    def generate_narrative(self, limit: int = 5) -> str:
+    def get_narrative_events(self, limit: int = 5) -> List[Dict[str, Any]]:
         commits = self._get_git_log(limit)
-        narrative = []
+        events = []
         
         for line in commits:
             if not line: continue
             hash_id, msg = line.split('|', 1)
             insight = self._mock_llm_insight(msg)
-            narrative.append(f"Commit {hash_id}: {msg}\n  -> {insight}")
+            events.append({
+                "hash": hash_id,
+                "message": msg,
+                "insight": insight
+            })
+
+        return events
+
+    def generate_narrative(self, limit: int = 5) -> str:
+        # Kept for backward compatibility, but uses get_narrative_events internally
+        events = self.get_narrative_events(limit)
+        narrative = []
+
+        for event in events:
+            narrative.append(f"Commit {event['hash']}: {event['message']}\n  -> LLM Analysis: {event['insight']}")
             
         return "\n\n".join(narrative)
