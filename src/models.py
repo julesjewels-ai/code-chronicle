@@ -7,7 +7,3 @@ class Commit:
     message: str
     diff: Optional[str] = None
 
-@dataclass(slots=True)
-class NarrativeChunk:
-    commit: Commit
-    analysis: str
