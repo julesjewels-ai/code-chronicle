@@ -19,11 +19,8 @@ class LocalGitService(GitProvider):
 
     @staticmethod
     def _parse_git_log(output: str) -> List[Commit]:
-        commits = []
-        for line in output.strip().split('\n'):
-            if not line:
-                continue
-            parts = line.split('|', 1)
-            if len(parts) == 2:
-                commits.append(Commit(hash_id=parts[0], message=parts[1]))
-        return commits
+        return [
+            Commit(hash_id=parts[0], message=parts[2])
+            for line in output.splitlines()
+            if (parts := line.partition('|'))[1]
+        ]
