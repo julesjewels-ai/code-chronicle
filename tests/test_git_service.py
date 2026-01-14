@@ -44,11 +44,13 @@ class TestLocalGitService(unittest.TestCase):
         result = self.service._parse_git_log(output)
         self.assertEqual(result, expected)
 
-    @patch('subprocess.run')
-    def test_get_commit_history_success(self, mock_run):
-        mock_result = MagicMock()
-        mock_result.stdout = "h1|m1\nh2|m2"
-        mock_run.return_value = mock_result
+    @patch('subprocess.Popen')
+    def test_get_commit_history_success(self, mock_popen):
+        process_mock = MagicMock()
+        process_mock.stdout = ["h1|m1\n", "h2|m2\n"]
+        process_mock.wait.return_value = 0
+        process_mock.__enter__.return_value = process_mock
+        mock_popen.return_value = process_mock
 
         commits = self.service.get_commit_history(2)
 
@@ -57,13 +59,18 @@ class TestLocalGitService(unittest.TestCase):
         self.assertEqual(commits[1].message, "m2")
 
         # Verify call args
-        args, _ = mock_run.call_args
+        args, _ = mock_popen.call_args
         self.assertEqual(args[0][:5], ["git", "-C", "/tmp/repo", "log", "-n"])
         self.assertEqual(args[0][6], "--pretty=format:%h|%s")
 
-    @patch('subprocess.run')
-    def test_get_commit_history_failure(self, mock_run):
-        mock_run.side_effect = subprocess.CalledProcessError(1, ['git'])
+    @patch('subprocess.Popen')
+    def test_get_commit_history_failure(self, mock_popen):
+        process_mock = MagicMock()
+        process_mock.wait.return_value = 1
+        process_mock.returncode = 1
+        process_mock.stdout = [] # Output might be empty on failure
+        process_mock.__enter__.return_value = process_mock
+        mock_popen.return_value = process_mock
 
         commits = self.service.get_commit_history(2)
         self.assertEqual(commits, [])
