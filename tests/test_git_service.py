@@ -65,8 +65,8 @@ class TestLocalGitService(unittest.TestCase):
     def test_get_commit_history_failure(self, mock_run):
         mock_run.side_effect = subprocess.CalledProcessError(1, ['git'])
 
-        commits = self.service.get_commit_history(2)
-        self.assertEqual(commits, [])
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.service.get_commit_history(2)
 
 if __name__ == '__main__':
     unittest.main()

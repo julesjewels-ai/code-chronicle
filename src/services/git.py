@@ -9,13 +9,8 @@ class LocalGitService(GitProvider):
 
     def get_commit_history(self, limit: int) -> List[Commit]:
         cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            return self._parse_git_log(result.stdout)
-        except subprocess.CalledProcessError as e:
-            # Handle error appropriately, maybe log or re-raise custom exception
-            print(f"Error fetching git log: {e}")
-            return []
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return self._parse_git_log(result.stdout)
 
     @staticmethod
     def _parse_git_log(output: str) -> List[Commit]:
