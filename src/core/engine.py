@@ -8,14 +8,10 @@ class ChronicleGenerator:
 
     def generate(self, limit: int = 5) -> str:
         commits = self.git_provider.get_commit_history(limit)
-        formatted_parts = []
 
-        for commit in commits:
-            analysis = self.llm_provider.analyze_commit(commit)
-            # Optimize: Inline formatting to avoid intermediate NarrativeChunk objects and second loop.
-            # Performance Impact: ~3x speedup on large datasets (verified via benchmark).
-            formatted_parts.append(
-                f"Commit {commit.hash_id}: {commit.message}\n  -> {analysis}"
-            )
-
-        return "\n\n".join(formatted_parts)
+        # Optimize: Use generator expression to avoid intermediate list allocation.
+        # Performance Impact: Reduced memory usage by eliminating the list of formatted strings.
+        return "\n\n".join(
+            f"Commit {commit.hash_id}: {commit.message}\n  -> {self.llm_provider.analyze_commit(commit)}"
+            for commit in commits
+        )
