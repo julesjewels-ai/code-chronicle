@@ -1,5 +1,7 @@
 from typing import List
+import concurrent.futures
 from ..interfaces import GitProvider, LLMProvider
+from ..models import Commit
 
 class ChronicleGenerator:
     def __init__(self, git_provider: GitProvider, llm_provider: LLMProvider):
@@ -9,9 +11,13 @@ class ChronicleGenerator:
     def generate(self, limit: int = 5) -> str:
         commits = self.git_provider.get_commit_history(limit)
 
-        # Optimize: Use generator expression to avoid intermediate list allocation.
-        # Performance Impact: Reduced memory usage by eliminating the list of formatted strings.
-        return "\n\n".join(
-            f"Commit {commit.hash_id}: {commit.message}\n  -> {self.llm_provider.analyze_commit(commit)}"
-            for commit in commits
-        )
+        # Optimize: Parallelize LLM analysis calls as they are I/O bound.
+        # This significantly reduces total time when using real network-based LLM providers.
+        # map() preserves the order of results corresponding to the input iterator.
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = executor.map(self._process_commit, commits)
+
+        return "\n\n".join(results)
+
+    def _process_commit(self, commit: Commit) -> str:
+        return f"Commit {commit.hash_id}: {commit.message}\n  -> {self.llm_provider.analyze_commit(commit)}"
