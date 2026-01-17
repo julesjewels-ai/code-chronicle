@@ -1,4 +1,3 @@
-from typing import List
 import concurrent.futures
 from ..interfaces import GitProvider, LLMProvider
 from ..models import Commit
