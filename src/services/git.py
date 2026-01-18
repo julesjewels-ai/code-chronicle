@@ -1,4 +1,5 @@
 import subprocess
+from typing import Iterator, Optional
 from ..interfaces import GitProvider
 from ..models import Commit
 
@@ -6,10 +7,30 @@ class LocalGitService(GitProvider):
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
 
-    def get_commit_history(self, limit: int) -> list[Commit]:
+    def get_commit_history(self, limit: int) -> Iterator[Commit]:
         cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return self._parse_git_log(result.stdout)
+
+        # Use Popen to stream output line by line.
+        # bufsize=1 enables line buffering.
+        with subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, text=True, bufsize=1
+        ) as process:
+            if process.stdout:
+                for line in process.stdout:
+                    if commit := self._parse_commit_from_line(line):
+                        yield commit
+
+            # Check for errors after processing
+            if process.wait() != 0:
+                raise subprocess.CalledProcessError(process.returncode, cmd)
+
+    @staticmethod
+    def _parse_commit_from_line(line: str) -> Optional[Commit]:
+        line = line.rstrip('\n')
+        parts = line.partition('|')
+        if parts[1]:
+            return Commit(hash_id=parts[0], message=parts[2])
+        return None
 
     @staticmethod
     def _parse_git_log(output: str) -> list[Commit]:
