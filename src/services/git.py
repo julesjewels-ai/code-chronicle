@@ -31,11 +31,3 @@ class LocalGitService(GitProvider):
         if parts[1]:
             return Commit(hash_id=parts[0], message=parts[2])
         return None
-
-    @staticmethod
-    def _parse_git_log(output: str) -> list[Commit]:
-        return [
-            Commit(hash_id=parts[0], message=parts[2])
-            for line in output.splitlines()
-            if (parts := line.partition('|'))[1]
-        ]
