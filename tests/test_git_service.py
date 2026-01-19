@@ -8,40 +8,28 @@ class TestLocalGitService(unittest.TestCase):
     def setUp(self):
         self.service = LocalGitService("/tmp/repo")
 
-    def test_parse_git_log_valid(self):
-        output = "hash1|message1\nhash2|message2"
-        expected = [
-            Commit(hash_id="hash1", message="message1"),
-            Commit(hash_id="hash2", message="message2")
-        ]
-        result = self.service._parse_git_log(output)
+    def test_parse_commit_from_line_valid(self):
+        line = "hash1|message1"
+        expected = Commit(hash_id="hash1", message="message1")
+        result = self.service._parse_commit_from_line(line)
         self.assertEqual(result, expected)
 
-    def test_parse_git_log_with_empty_lines(self):
-        output = "\n\nhash1|message1\n\n"
-        expected = [
-            Commit(hash_id="hash1", message="message1")
-        ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
+    def test_parse_commit_from_line_empty(self):
+        line = ""
+        result = self.service._parse_commit_from_line(line)
+        self.assertIsNone(result)
 
-    def test_parse_git_log_malformed(self):
-        # Lines without '|' should be ignored based on current implementation
-        output = "hash1|message1\nmalformed_line\nhash2|message2"
-        expected = [
-            Commit(hash_id="hash1", message="message1"),
-            Commit(hash_id="hash2", message="message2")
-        ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
+    def test_parse_commit_from_line_malformed(self):
+        # Lines without '|' should return None
+        line = "malformed_line"
+        result = self.service._parse_commit_from_line(line)
+        self.assertIsNone(result)
 
-    def test_parse_git_log_extra_separator(self):
+    def test_parse_commit_from_line_extra_separator(self):
         # Should split only on first '|'
-        output = "hash1|message|with|pipes"
-        expected = [
-            Commit(hash_id="hash1", message="message|with|pipes")
-        ]
-        result = self.service._parse_git_log(output)
+        line = "hash1|message|with|pipes"
+        expected = Commit(hash_id="hash1", message="message|with|pipes")
+        result = self.service._parse_commit_from_line(line)
         self.assertEqual(result, expected)
 
     @patch('subprocess.Popen')
