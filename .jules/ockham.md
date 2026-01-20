@@ -9,3 +9,7 @@
 ## 2026-02-10 - [Modernized Types and Error Handling]
 **Observation:** `LocalGitService` used deprecated `typing.List` and swallowed exceptions with a `try/except` block that printed to stdout, creating hidden control flow and side effects.
 **Action:** Replaced `List` with `list` (Python 3.9+). Removed `try/except` in `get_commit_history` to allow exceptions to propagate to the caller, simplifying the service and improving error visibility.
+
+## 2026-01-20 - [Removed Dead Code - Git Parsing]
+**Observation:** `LocalGitService._parse_git_log` was dead code, retained only for testing purposes, while the actual execution path used `_parse_commit_from_line`.
+**Action:** Removed `_parse_git_log`. Refactored unit tests to target `_parse_commit_from_line` directly, aligning test coverage with production code and reducing cognitive load.
