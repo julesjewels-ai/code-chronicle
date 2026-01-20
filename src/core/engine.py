@@ -1,4 +1,3 @@
-import concurrent.futures
 from ..interfaces import GitProvider, LLMProvider
 from ..models import Commit
 
@@ -8,6 +7,9 @@ class ChronicleGenerator:
         self.llm_provider = llm_provider
 
     def generate(self, limit: int = 5) -> str:
+        # Lazy import to optimize startup time
+        import concurrent.futures
+
         commits = self.git_provider.get_commit_history(limit)
 
         # Optimize: Parallelize LLM analysis calls as they are I/O bound.
