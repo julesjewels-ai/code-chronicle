@@ -17,20 +17,12 @@ class LocalGitService(GitProvider):
         ) as process:
             if process.stdout:
                 for line in process.stdout:
-                    if commit := self._parse_commit_from_line(line):
+                    if commit := _parse_commit_from_line(line):
                         yield commit
 
             # Check for errors after processing
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
-
-    @staticmethod
-    def _parse_commit_from_line(line: str) -> Optional[Commit]:
-        line = line.rstrip('\n')
-        parts = line.partition('|')
-        if parts[1]:
-            return Commit(hash_id=parts[0], message=parts[2])
-        return None
 
     @staticmethod
     def _parse_git_log(output: str) -> list[Commit]:
@@ -39,3 +31,10 @@ class LocalGitService(GitProvider):
             for line in output.splitlines()
             if (parts := line.partition('|'))[1]
         ]
+
+def _parse_commit_from_line(line: str) -> Optional[Commit]:
+    line = line.rstrip('\n')
+    parts = line.partition('|')
+    if parts[1]:
+        return Commit(hash_id=parts[0], message=parts[2])
+    return None
