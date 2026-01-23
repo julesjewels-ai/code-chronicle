@@ -1,5 +1,5 @@
 import subprocess
-from typing import Iterator, Optional
+from collections.abc import Iterator
 from ..interfaces import GitProvider
 from ..models import Commit
 
@@ -24,15 +24,7 @@ class LocalGitService(GitProvider):
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    @staticmethod
-    def _parse_git_log(output: str) -> list[Commit]:
-        return [
-            Commit(hash_id=parts[0], message=parts[2])
-            for line in output.splitlines()
-            if (parts := line.partition('|'))[1]
-        ]
-
-def _parse_commit_from_line(line: str) -> Optional[Commit]:
+def _parse_commit_from_line(line: str) -> Commit | None:
     line = line.rstrip('\n')
     parts = line.partition('|')
     if parts[1]:
