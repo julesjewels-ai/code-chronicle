@@ -8,41 +8,35 @@ class TestLocalGitService(unittest.TestCase):
     def setUp(self):
         self.service = LocalGitService("/tmp/repo")
 
-    def test_parse_git_log_valid(self):
-        output = "hash1|message1\nhash2|message2"
+    @patch('subprocess.Popen')
+    def test_get_commit_history_parsing_edge_cases(self, mock_popen):
+        """
+        Verify that get_commit_history correctly parses lines and handles edge cases:
+        - Valid lines
+        - Empty lines (skipped)
+        - Malformed lines (no separator, skipped)
+        - Lines with extra separators (message contains separator)
+        """
+        process_mock = MagicMock()
+        process_mock.stdout = iter([
+            "hash1|message1\n",
+            "\n",  # Empty line
+            "malformed_line\n",  # No separator
+            "hash2|message|with|pipes\n"  # Extra separator
+        ])
+        process_mock.wait.return_value = 0
+        process_mock.__enter__.return_value = process_mock
+
+        mock_popen.return_value = process_mock
+
+        commits = list(self.service.get_commit_history(10))
+
         expected = [
             Commit(hash_id="hash1", message="message1"),
-            Commit(hash_id="hash2", message="message2")
+            Commit(hash_id="hash2", message="message|with|pipes")
         ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
 
-    def test_parse_git_log_with_empty_lines(self):
-        output = "\n\nhash1|message1\n\n"
-        expected = [
-            Commit(hash_id="hash1", message="message1")
-        ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
-
-    def test_parse_git_log_malformed(self):
-        # Lines without '|' should be ignored based on current implementation
-        output = "hash1|message1\nmalformed_line\nhash2|message2"
-        expected = [
-            Commit(hash_id="hash1", message="message1"),
-            Commit(hash_id="hash2", message="message2")
-        ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
-
-    def test_parse_git_log_extra_separator(self):
-        # Should split only on first '|'
-        output = "hash1|message|with|pipes"
-        expected = [
-            Commit(hash_id="hash1", message="message|with|pipes")
-        ]
-        result = self.service._parse_git_log(output)
-        self.assertEqual(result, expected)
+        self.assertEqual(commits, expected)
 
     @patch('subprocess.Popen')
     def test_get_commit_history_success(self, mock_popen):
