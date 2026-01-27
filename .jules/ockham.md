@@ -13,3 +13,7 @@
 ## 2026-01-25 - [Removed Dead Code in Git Service]
 **Observation:** `LocalGitService._parse_git_log` was a dead method, a remnant of a previous implementation before streaming was introduced. Tests were verifying this dead code instead of the actual `_parse_commit_from_line` logic used in production.
 **Action:** Removed `_parse_git_log`. Refactored tests to directly verify `_parse_commit_from_line`, ensuring the test suite covers the live code path and reducing cognitive load.
+
+## 2026-03-01 - [Modernized Type Hints]
+**Observation:** `src/services/git.py` and `src/interfaces.py` relied on legacy `typing` imports (`Iterator`, `Optional`), adding unnecessary import overhead and verbosity.
+**Action:** Replaced `typing.Iterator` with `collections.abc.Iterator` and `Optional[T]` with `T | None` (Python 3.10+). Removed unused `typing` imports to simplify dependency footprint and align with modern Python standards.
