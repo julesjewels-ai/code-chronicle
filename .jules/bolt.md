@@ -13,3 +13,5 @@
 ## 2024-05-27 - [Static Method vs Function] **Learning:** Extracting tight-loop static methods to module-level functions can reduce overhead by ~35% (approx 40ns per call) by avoiding attribute lookup. **Action:** Consider extracting helpers in hot loops.
 
 ## 2024-05-28 - [Subprocess Import Cost] **Learning:** Lazy importing 'subprocess' in 'LocalGitService' reduced module import time by ~95ms (from ~150ms to ~55ms). Standard library imports can be significant bottlenecks in CLI tools. **Action:** Profile standard library imports in hot paths or CLI startup.
+
+## 2026-01-27 - [Subprocess Buffering] **Learning:** `subprocess.Popen` with `bufsize=1` (line buffering) increases syscall overhead significantly compared to default buffering (`bufsize=-1`). Switching to default buffering improved throughput by ~7% for large outputs while still supporting line iteration via `TextIOWrapper`. **Action:** Use `bufsize=-1` for `subprocess` streaming unless interactive line-by-line control (deadlock prevention) is strictly required.
