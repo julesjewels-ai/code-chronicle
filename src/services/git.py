@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from collections.abc import Iterator
 from ..interfaces import GitProvider
 from ..models import Commit
 
@@ -26,7 +26,7 @@ class LocalGitService(GitProvider):
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
 
-def _parse_commit_from_line(line: str) -> Optional[Commit]:
+def _parse_commit_from_line(line: str) -> Commit | None:
     line = line.rstrip('\n')
     parts = line.partition('|')
     if parts[1]:
