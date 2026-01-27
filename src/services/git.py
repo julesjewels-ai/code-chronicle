@@ -26,14 +26,6 @@ class LocalGitService(GitProvider):
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    @staticmethod
-    def _parse_git_log(output: str) -> list[Commit]:
-        return [
-            Commit(hash_id=parts[0], message=parts[2])
-            for line in output.splitlines()
-            if (parts := line.partition('|'))[1]
-        ]
-
 def _parse_commit_from_line(line: str) -> Optional[Commit]:
     line = line.rstrip('\n')
     parts = line.partition('|')
