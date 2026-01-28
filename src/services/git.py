@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from ..interfaces import GitProvider
 from ..models import Commit
 
+
 class LocalGitService(GitProvider):
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
@@ -10,15 +11,20 @@ class LocalGitService(GitProvider):
         # Lazy import to optimize startup time (~150ms improvement)
         import subprocess
 
-        cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
+        cmd = [
+            "git", "-C", self.repo_path, "log", "-n", str(limit),
+            "--pretty=format:%h|%s"
+        ]
 
         # Use Popen to stream output line by line.
-        # Use default buffering (bufsize=-1) to improve throughput and reduce syscalls
-        # compared to line buffering (bufsize=1), while still yielding lines via the iterator.
+        # Use default buffering (bufsize=-1) to improve throughput and reduce
+        # syscalls compared to line buffering (bufsize=1), while still
+        # yielding lines via the iterator.
         with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, text=True
         ) as process:
-            # Type safety: stdout is guaranteed to be non-None due to stdout=PIPE
+            # Type safety: stdout is guaranteed to be non-None due to
+            # stdout=PIPE
             assert process.stdout is not None
             for line in process.stdout:
                 if commit := _parse_commit_from_line(line):
@@ -27,6 +33,7 @@ class LocalGitService(GitProvider):
             # Check for errors after processing
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
+
 
 def _parse_commit_from_line(line: str) -> Commit | None:
     line = line.rstrip('\n')
