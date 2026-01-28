@@ -18,10 +18,11 @@ class LocalGitService(GitProvider):
         with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, text=True
         ) as process:
-            if process.stdout:
-                for line in process.stdout:
-                    if commit := _parse_commit_from_line(line):
-                        yield commit
+            # Type safety: stdout is guaranteed to be non-None due to stdout=PIPE
+            assert process.stdout is not None
+            for line in process.stdout:
+                if commit := _parse_commit_from_line(line):
+                    yield commit
 
             # Check for errors after processing
             if process.wait() != 0:
