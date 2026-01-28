@@ -13,9 +13,10 @@ class LocalGitService(GitProvider):
         cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
 
         # Use Popen to stream output line by line.
-        # bufsize=1 enables line buffering.
+        # Use default buffering (bufsize=-1) to improve throughput and reduce syscalls
+        # compared to line buffering (bufsize=1), while still yielding lines via the iterator.
         with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, text=True, bufsize=1
+            cmd, stdout=subprocess.PIPE, text=True
         ) as process:
             if process.stdout:
                 for line in process.stdout:

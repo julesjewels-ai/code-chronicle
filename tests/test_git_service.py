@@ -53,7 +53,8 @@ class TestLocalGitService(unittest.TestCase):
         self.assertEqual(args[0][6], "--pretty=format:%h|%s")
         self.assertEqual(kwargs['stdout'], subprocess.PIPE)
         self.assertEqual(kwargs['text'], True)
-        self.assertEqual(kwargs['bufsize'], 1)
+        # bufsize is default (-1), so it might not be in kwargs or be -1 depending on impl.
+        # We removed explicitly setting it to 1.
 
     @patch('subprocess.Popen')
     def test_get_commit_history_failure(self, mock_popen):
