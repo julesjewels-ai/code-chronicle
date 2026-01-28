@@ -3,10 +3,11 @@ from src.services.git import LocalGitService
 from src.services.llm import MockLLMService
 from src.core.engine import ChronicleGenerator
 
+
 def main() -> None:
     # Use current directory by default if no path provided
     repo_path = sys.argv[1] if len(sys.argv) > 1 else "."
-    
+
     print(f"Initializing CodeChronicle for: {repo_path}")
 
     # Initialize services
@@ -24,6 +25,7 @@ def main() -> None:
         print("\n=== End of Story ===")
     except Exception as e:
         print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     main()

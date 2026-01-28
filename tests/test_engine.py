@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from src.core.engine import ChronicleGenerator
 from src.models import Commit
 
+
 class TestChronicleGenerator(unittest.TestCase):
     def test_generate(self):
         # Mock dependencies
@@ -26,6 +27,7 @@ class TestChronicleGenerator(unittest.TestCase):
         self.assertIn("-> analysis", result)
         mock_git.get_commit_history.assert_called_with(1)
         mock_llm.analyze_commit.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
