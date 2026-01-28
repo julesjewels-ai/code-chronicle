@@ -17,3 +17,7 @@
 ## 2026-03-01 - [Modernized Type Hints]
 **Observation:** `src/services/git.py` and `src/interfaces.py` relied on legacy `typing` imports (`Iterator`, `Optional`), adding unnecessary import overhead and verbosity.
 **Action:** Replaced `typing.Iterator` with `collections.abc.Iterator` and `Optional[T]` with `T | None` (Python 3.10+). Removed unused `typing` imports to simplify dependency footprint and align with modern Python standards.
+
+## 2026-03-05 - [Flattened Git Service Logic]
+**Observation:** `LocalGitService.get_commit_history` contained unnecessary nesting (level 4) due to a redundant `if process.stdout:` check, increasing cognitive load.
+**Action:** Removed the redundant check and added an `assert` for type safety. Flattened the loop structure to improve readability while maintaining strict type compliance.
