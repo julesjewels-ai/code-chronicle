@@ -21,3 +21,7 @@
 ## 2026-03-05 - [Flattened Git Service Logic]
 **Observation:** `LocalGitService.get_commit_history` contained unnecessary nesting (level 4) due to a redundant `if process.stdout:` check, increasing cognitive load.
 **Action:** Removed the redundant check and added an `assert` for type safety. Flattened the loop structure to improve readability while maintaining strict type compliance.
+
+## 2026-03-XX - [Refactor Git Parsing & Linting Payment]
+**Observation:** `_parse_commit_from_line` used magic indices (`parts[1]`) reducing readability. Codebase had accumulated multiple PEP 8 violations (blank lines, line lengths).
+**Action:** Refactored to use tuple unpacking (`hash_id, sep, message`) for clarity. Paid down linting debt across the entire codebase to meet standards.
