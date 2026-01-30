@@ -2,6 +2,8 @@ from collections.abc import Iterator
 from ..interfaces import GitProvider
 from ..models import Commit
 
+COMMIT_SEPARATOR = '|'
+
 
 class LocalGitService(GitProvider):
     def __init__(self, repo_path: str):
@@ -11,7 +13,7 @@ class LocalGitService(GitProvider):
         # Lazy import to optimize startup time (~150ms improvement)
         import subprocess
 
-        cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
+        cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), f"--pretty=format:%h{COMMIT_SEPARATOR}%s"]
 
         # Use Popen to stream output line by line.
         # Use default buffering (bufsize=-1) to improve throughput and reduce syscalls
@@ -38,7 +40,7 @@ class LocalGitService(GitProvider):
 def _parse_commit_from_line(line: str) -> Commit | None:
     # Optimization: partition first, then rstrip only the message.
     # Avoids copying the entire line via rstrip (~2% speedup).
-    parts = line.partition('|')
+    parts = line.partition(COMMIT_SEPARATOR)
     if parts[1]:
         return Commit(hash_id=parts[0], message=parts[2].rstrip('\n'))
     return None

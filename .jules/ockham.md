@@ -21,3 +21,7 @@
 ## 2026-03-05 - [Flattened Git Service Logic]
 **Observation:** `LocalGitService.get_commit_history` contained unnecessary nesting (level 4) due to a redundant `if process.stdout:` check, increasing cognitive load.
 **Action:** Removed the redundant check and added an `assert` for type safety. Flattened the loop structure to improve readability while maintaining strict type compliance.
+
+## 2026-01-30 - [Extracted Magic Separator]
+**Observation:** `src/services/git.py` used a hardcoded `|` separator in both command construction and parsing logic, creating implicit coupling.
+**Action:** Extracted `COMMIT_SEPARATOR` constant to enforce Single Source of Truth and reduce magic strings.
