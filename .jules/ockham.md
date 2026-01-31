@@ -21,3 +21,7 @@
 ## 2026-03-05 - [Flattened Git Service Logic]
 **Observation:** `LocalGitService.get_commit_history` contained unnecessary nesting (level 4) due to a redundant `if process.stdout:` check, increasing cognitive load.
 **Action:** Removed the redundant check and added an `assert` for type safety. Flattened the loop structure to improve readability while maintaining strict type compliance.
+
+## 2026-03-24 - [Inlined Git Parsing Logic]
+**Observation:** `LocalGitService` used a private helper function `_parse_commit_from_line` which was only used in one place. This added unnecessary indirection and cognitive load.
+**Action:** Inlined the parsing logic directly into the loop in `get_commit_history`. Removed the helper function and refactored tests to verify parsing via the public API, reducing total lines of code and simplifying the call stack.

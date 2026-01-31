@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from src.services.git import LocalGitService, _parse_commit_from_line
+from src.services.git import LocalGitService
 from src.models import Commit
 import subprocess
 
@@ -8,27 +8,27 @@ class TestLocalGitService(unittest.TestCase):
     def setUp(self):
         self.service = LocalGitService("/tmp/repo")
 
-    def test_parse_commit_from_line_valid(self):
-        line = "hash1|message1"
-        expected = Commit(hash_id="hash1", message="message1")
-        result = _parse_commit_from_line(line)
-        self.assertEqual(result, expected)
+    @patch('subprocess.Popen')
+    def test_get_commit_history_parsing_edge_cases(self, mock_popen):
+        process_mock = MagicMock()
+        # Simulate mixed output: valid, empty, malformed, extra separators
+        process_mock.stdout = iter([
+            "h1|valid\n",
+            "\n",                  # Empty line (should be skipped)
+            "malformed_no_pipe\n", # Malformed (should be skipped)
+            "h2|message|with|pipes\n"
+        ])
+        process_mock.wait.return_value = 0
+        process_mock.__enter__.return_value = process_mock
 
-    def test_parse_commit_from_line_empty(self):
-        line = ""
-        result = _parse_commit_from_line(line)
-        self.assertIsNone(result)
+        mock_popen.return_value = process_mock
 
-    def test_parse_commit_from_line_malformed(self):
-        line = "malformed_line_no_pipe"
-        result = _parse_commit_from_line(line)
-        self.assertIsNone(result)
+        commits = list(self.service.get_commit_history(10))
 
-    def test_parse_commit_from_line_extra_separator(self):
-        line = "hash1|message|with|pipes"
-        expected = Commit(hash_id="hash1", message="message|with|pipes")
-        result = _parse_commit_from_line(line)
-        self.assertEqual(result, expected)
+        # Only 2 valid commits should be returned
+        self.assertEqual(len(commits), 2)
+        self.assertEqual(commits[0], Commit(hash_id="h1", message="valid"))
+        self.assertEqual(commits[1], Commit(hash_id="h2", message="message|with|pipes"))
 
     @patch('subprocess.Popen')
     def test_get_commit_history_success(self, mock_popen):
