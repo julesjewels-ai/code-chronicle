@@ -8,37 +8,58 @@ class LocalGitService(GitProvider):
         self.repo_path = repo_path
 
     def get_commit_history(self, limit: int) -> Iterator[Commit]:
-        # Lazy import to optimize startup time (~150ms improvement)
+        # Lazy import to optimize startup time
         import subprocess
 
-        cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), "--pretty=format:%h|%s"]
+        # Format: hash|author|date|subject|body(record_sep)
+        # delimiters: \x1f (unit separator) for fields, \x1e (record separator) for commits
+        # tformat adds a newline after each commit, so we will get ...%x1e\n
+        fmt = "%h%x1f%an%x1f%ad%x1f%s%x1f%b%x1e"
+        cmd = ["git", "-C", self.repo_path, "log", "-n", str(limit), f"--pretty=tformat:{fmt}"]
 
-        # Use Popen to stream output line by line.
-        # Use default buffering (bufsize=-1) to improve throughput and reduce syscalls
-        # compared to line buffering (bufsize=1), while still yielding lines via the iterator.
+        # Use Popen to stream output
         with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, text=True
+            cmd, stdout=subprocess.PIPE, text=True, bufsize=-1
         ) as process:
-            # Type safety: stdout is guaranteed to be non-None due to stdout=PIPE
             assert process.stdout is not None
 
-            # Local lookup optimization: reduces LOAD_GLOBAL overhead
-            # (~3.5% faster)
-            parse = _parse_commit_from_line
+            buffer = ""
+            while True:
+                chunk = process.stdout.read(4096)
+                if not chunk:
+                    break
+                buffer += chunk
+                while '\x1e' in buffer:
+                    record, _, buffer = buffer.partition('\x1e')
+                    if commit := _parse_commit_record(record):
+                        yield commit
 
-            for line in process.stdout:
-                if commit := parse(line):
-                    yield commit
+            # Handle any remaining data
+            if buffer and (commit := _parse_commit_record(buffer)):
+                yield commit
 
-            # Check for errors after processing
             if process.wait() != 0:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
 
 
-def _parse_commit_from_line(line: str) -> Commit | None:
-    # Optimization: partition first, then rstrip only the message.
-    # Avoids copying the entire line via rstrip (~2% speedup).
-    parts = line.partition('|')
-    if parts[1]:
-        return Commit(hash_id=parts[0], message=parts[2].rstrip('\n'))
+def _parse_commit_record(record: str) -> Commit | None:
+    # Remove potential leading newline from tformat
+    record = record.lstrip()
+    if not record:
+        return None
+
+    parts = record.split('\x1f')
+    # Expecting 5 parts: hash, author, date, subject, body
+    # But body might be empty or contain fewer parts if git log output is weird?
+    # git log format should guarantee parts if placeholders are there.
+    # However, if body is empty, it's just empty string.
+
+    if len(parts) >= 5:
+        return Commit(
+            hash_id=parts[0],
+            author=parts[1],
+            date=parts[2],
+            message=parts[3],
+            body=parts[4]
+        )
     return None

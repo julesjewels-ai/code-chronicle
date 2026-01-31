@@ -11,7 +11,7 @@ class TestChronicleGenerator(unittest.TestCase):
 
         # Setup mock return values
         mock_git.get_commit_history.return_value = [
-            Commit(hash_id="123", message="test commit")
+            Commit(hash_id="123", author="Dev", date="2024-01-01", message="test commit", body="details")
         ]
         mock_llm.analyze_commit.return_value = "analysis"
 

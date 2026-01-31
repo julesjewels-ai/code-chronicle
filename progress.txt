@@ -1,0 +1,2 @@
+2024-05-22: Project initialization. Created plan.
+2024-05-22: Enhanced Git Service. Updated Commit model with author, date, body. Implemented robust git log parsing using delimiters. Verified with tests.
