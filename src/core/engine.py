@@ -13,7 +13,11 @@ class ChronicleGenerator:
         # Optimize: Parallelize LLM analysis calls as they are I/O bound.
         # This significantly reduces total time when using real network-based LLM providers.
         # map() preserves the order of results corresponding to the input iterator.
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+
+        # Adjust max_workers to avoid unnecessary thread overhead for small limits
+        max_workers = min(limit, 32) if limit > 0 else None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             return "\n\n".join(executor.map(
                 self._process_commit,
                 self.git_provider.get_commit_history(limit)
