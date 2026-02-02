@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from src.core.engine import ChronicleGenerator
-from src.models import Commit
+from src.models import Commit, AnalyzedCommit
 
 class TestChronicleGenerator(unittest.TestCase):
     def test_generate(self):
@@ -19,11 +19,14 @@ class TestChronicleGenerator(unittest.TestCase):
         generator = ChronicleGenerator(mock_git, mock_llm)
 
         # Run generation
-        result = generator.generate(limit=1)
+        results = list(generator.generate(limit=1))
 
         # Assertions
-        self.assertIn("Commit 123: test commit", result)
-        self.assertIn("-> analysis", result)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], AnalyzedCommit)
+        self.assertEqual(results[0].commit.hash_id, "123")
+        self.assertEqual(results[0].analysis, "analysis")
+
         mock_git.get_commit_history.assert_called_with(1)
         mock_llm.analyze_commit.assert_called_once()
 
