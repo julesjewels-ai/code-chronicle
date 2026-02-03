@@ -27,9 +27,9 @@ class LocalGitService(GitProvider):
                 # Optimization: Inlined parsing logic (avoids function call overhead)
                 # and used slicing [:-1] instead of rstrip('\n') (avoids string scan).
                 # Combined ~11% speedup.
-                parts = line.partition('|')
-                if parts[1]:
-                    yield Commit(hash_id=parts[0], message=parts[2][:-1])
+                hash_id, sep, subject = line.partition('|')
+                if sep:
+                    yield Commit(hash_id=hash_id, message=subject[:-1])
 
             # Check for errors after processing
             if process.wait() != 0:

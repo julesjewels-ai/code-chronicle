@@ -25,3 +25,7 @@
 ## 2026-03-08 - [Inline Temps in ChronicleGenerator]
 **Observation:** `ChronicleGenerator.generate` used unnecessary temporary variables (`commits`, `results`) to hold intermediate values that were only used once, slightly increasing method length and cognitive load.
 **Action:** Inlined `commits` and `results` directly into the `executor.map` and `join` calls within the `with` statement, reducing line count and consolidating logic flow.
+
+## 2026-03-24 - [Simplified Git Parsing Variables]
+**Observation:** `LocalGitService` used indexed access (`parts[0]`, `parts[2]`) on `partition` results, creating "magic index" cognitive load.
+**Action:** Replaced with explicit tuple unpacking (`hash_id, sep, subject = line.partition('|')`). Improved readability by giving semantic names to intermediate values without sacrificing performance or type safety.
