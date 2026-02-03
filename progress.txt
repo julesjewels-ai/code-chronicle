@@ -1,0 +1,7 @@
+2024-05-22: Starting Refactor of Reporting Layer.
+2024-05-22: Completed Refactor of Reporting Layer.
+  - Introduced AnalyzedCommit DTO.
+  - Decoupled reporting from generation using ReportGenerator interface.
+  - Implemented ConsoleReportGenerator and MarkdownReportGenerator.
+  - Updated ChronicleGenerator to return Iterator[AnalyzedCommit].
+  - Verified with pytest and mypy.

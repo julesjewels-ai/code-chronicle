@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from .models import Commit
+from .models import Commit, AnalyzedCommit
 
 class GitProvider(ABC):
     @abstractmethod
@@ -10,4 +10,9 @@ class GitProvider(ABC):
 class LLMProvider(ABC):
     @abstractmethod
     def analyze_commit(self, commit: Commit) -> str:
+        pass
+
+class ReportGenerator(ABC):
+    @abstractmethod
+    def generate(self, analyzed_commits: Iterator[AnalyzedCommit]) -> str:
         pass
