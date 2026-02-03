@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from src.services.git import LocalGitService
-from src.models import Commit
 import subprocess
 
 class TestLocalGitService(unittest.TestCase):

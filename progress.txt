@@ -5,3 +5,9 @@
   - Implemented ConsoleReportGenerator and MarkdownReportGenerator.
   - Updated ChronicleGenerator to return Iterator[AnalyzedCommit].
   - Verified with pytest and mypy.
+2026-02-03: Implemented CLI Configuration.
+  - Updated main.py to use argparse.
+  - Added support for --limit and --format flags.
+  - Implemented input validation for repository path.
+  - Added tests/test_main.py to verify CLI logic.
+  - Verified with pytest, mypy, and ruff.
