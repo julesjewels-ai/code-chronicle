@@ -25,3 +25,7 @@
 ## 2026-03-08 - [Inline Temps in ChronicleGenerator]
 **Observation:** `ChronicleGenerator.generate` used unnecessary temporary variables (`commits`, `results`) to hold intermediate values that were only used once, slightly increasing method length and cognitive load.
 **Action:** Inlined `commits` and `results` directly into the `executor.map` and `join` calls within the `with` statement, reducing line count and consolidating logic flow.
+
+## 2026-03-10 - [Streaming Optimization in ChronicleGenerator]
+**Observation:** `ChronicleGenerator.generate` was creating an intermediate list of results before returning an iterator, defeating the purpose of streaming and increasing time-to-first-result.
+**Action:** Replaced `results = list(...)` with `yield from executor.map(...)` to enable true streaming while maintaining thread pool context. Reduced memory footprint and latency.
