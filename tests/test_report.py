@@ -19,9 +19,11 @@ class TestReportGenerators(unittest.TestCase):
         generator = ConsoleReportGenerator()
         report = generator.generate(iter(self.analyzed_commits))
 
+        self.assertIn("=== Code Evolution Narrative ===", report)
         expected_fragment = "Commit 123: test commit\n  -> analysis"
         self.assertIn(expected_fragment, report)
         self.assertIn("Commit 456", report)
+        self.assertIn("=== End of Story ===", report)
 
     def test_markdown_report(self):
         generator = MarkdownReportGenerator()

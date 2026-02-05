@@ -4,10 +4,11 @@ from ..models import AnalyzedCommit
 
 class ConsoleReportGenerator(ReportGenerator):
     def generate(self, analyzed_commits: Iterator[AnalyzedCommit]) -> str:
-        return "\n\n".join(
+        body = "\n\n".join(
             f"Commit {ac.commit.hash_id}: {ac.commit.message}\n  -> {ac.analysis}"
             for ac in analyzed_commits
         )
+        return f"\n=== Code Evolution Narrative ===\n\n{body}\n\n=== End of Story ==="
 
 class MarkdownReportGenerator(ReportGenerator):
     def generate(self, analyzed_commits: Iterator[AnalyzedCommit]) -> str:
