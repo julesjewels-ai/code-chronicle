@@ -1,50 +1,60 @@
-import sys
-import unittest
-from unittest.mock import patch, MagicMock
-# We import main inside tests to ensure mocks work correctly if imports happen at top level
+import pytest  # type: ignore
+from unittest.mock import patch
+import argparse
 from main import main
 
-class TestMain(unittest.TestCase):
-    @patch('main.LocalGitService')
-    @patch('main.MockLLMService')
-    @patch('main.ConsoleReportGenerator')
-    @patch('main.MarkdownReportGenerator')
-    @patch('main.ChronicleGenerator')
-    @patch('os.path.isdir', return_value=True)
-    def test_main_defaults(self, mock_isdir, mock_generator, mock_md_report, mock_console_report, mock_llm, mock_git):
-        # Mock sys.argv context manager not available in 3.10 standard lib for patch.dict/object easily for list
-        with patch.object(sys, 'argv', ['main.py']):
-            mock_gen_instance = mock_generator.return_value
-            mock_gen_instance.generate.return_value = []
+@pytest.fixture
+def mock_dependencies():
+    with patch('main.LocalGitService') as git, \
+         patch('main.MockLLMService') as llm, \
+         patch('main.ConsoleReportGenerator') as console_report, \
+         patch('main.MarkdownReportGenerator') as md_report, \
+         patch('main.ChronicleGenerator') as generator, \
+         patch('main.parse_args') as parse_args, \
+         patch('os.path.isdir') as isdir:
 
-            main()
+        # Setup common behavior
+        mock_gen_instance = generator.return_value
+        mock_gen_instance.generate.return_value = []
+        isdir.return_value = True
 
-            mock_git.assert_called_once_with(".")
-            mock_gen_instance.generate.assert_called_once_with(limit=5)
-            mock_console_report.assert_called_once()
-            mock_md_report.assert_not_called()
+        yield {
+            'git': git,
+            'llm': llm,
+            'console_report': console_report,
+            'md_report': md_report,
+            'generator': generator,
+            'parse_args': parse_args,
+            'isdir': isdir
+        }
 
-    @patch('main.LocalGitService')
-    @patch('main.MockLLMService')
-    @patch('main.ConsoleReportGenerator')
-    @patch('main.MarkdownReportGenerator')
-    @patch('main.ChronicleGenerator')
-    @patch('os.path.isdir', return_value=True)
-    def test_main_custom_args(self, mock_isdir, mock_generator, mock_md_report, mock_console_report, mock_llm, mock_git):
-        with patch.object(sys, 'argv', ['main.py', '/custom/repo', '-n', '10', '-f', 'markdown']):
-            mock_gen_instance = mock_generator.return_value
-            mock_gen_instance.generate.return_value = []
+def test_main_defaults(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console')
 
-            main()
+    main()
 
-            mock_git.assert_called_once_with("/custom/repo")
-            mock_gen_instance.generate.assert_called_once_with(limit=10)
-            mock_md_report.assert_called_once()
-            mock_console_report.assert_not_called()
+    deps['git'].assert_called_once_with(".")
+    deps['generator'].return_value.generate.assert_called_once_with(limit=5)
+    deps['console_report'].assert_called_once()
+    deps['md_report'].assert_not_called()
 
-    @patch('os.path.isdir', return_value=False)
-    @patch('sys.stderr', new_callable=MagicMock)
-    def test_main_invalid_path(self, mock_stderr, mock_isdir):
-        with patch.object(sys, 'argv', ['main.py', '/invalid/path']):
-            with self.assertRaises(SystemExit):
-                main()
+def test_main_custom_args(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='/custom/repo', limit=10, format='markdown')
+
+    main()
+
+    deps['git'].assert_called_once_with("/custom/repo")
+    deps['generator'].return_value.generate.assert_called_once_with(limit=10)
+    deps['md_report'].assert_called_once()
+    deps['console_report'].assert_not_called()
+
+def test_main_invalid_path(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='/invalid/path', limit=5, format='console')
+    deps['isdir'].return_value = False
+
+    # We verify it exits
+    with pytest.raises(SystemExit):
+        main()

@@ -1,32 +1,10 @@
-import argparse
 import os
 import sys
+from src.cli import parse_args
 from src.services.git import LocalGitService
 from src.services.llm import MockLLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="CodeChronicle: Turn git history into a narrative.")
-    parser.add_argument(
-        "path",
-        nargs="?",
-        default=".",
-        help="Path to the repository (default: current directory)"
-    )
-    parser.add_argument(
-        "-n", "--limit",
-        type=int,
-        default=5,
-        help="Number of commits to analyze (default: 5)"
-    )
-    parser.add_argument(
-        "-f", "--format",
-        choices=["console", "markdown"],
-        default="console",
-        help="Output format (default: console)"
-    )
-    return parser.parse_args()
 
 def main() -> None:
     args = parse_args()

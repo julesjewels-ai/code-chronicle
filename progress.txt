@@ -5,3 +5,10 @@
   - Implemented ConsoleReportGenerator and MarkdownReportGenerator.
   - Updated ChronicleGenerator to return Iterator[AnalyzedCommit].
   - Verified with pytest and mypy.
+2024-05-23: Completed CLI Configuration Refactor.
+  - Extracted CLI argument parsing logic to src/cli.py.
+  - Added validation for limit argument (positive integer).
+  - Refactored main.py to use the new CLI module.
+  - Created tests/test_cli.py using pytest.
+  - Refactored tests/test_main.py to use pytest.
+  - Verified with pytest, mypy, and ruff.
