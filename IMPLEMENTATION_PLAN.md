@@ -6,5 +6,5 @@
     - [x] Create IReportGenerator Interface
     - [x] Refactor ChronicleGenerator to return data
     - [x] Implement Console and Markdown Reporters
-- [ ] CLI Configuration (Argparse)
+- [x] CLI Configuration (Argparse)
 - [ ] Real LLM Integration
