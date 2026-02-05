@@ -3,7 +3,7 @@ import os
 import sys
 from src.services.git import LocalGitService
 from src.services.llm import MockLLMService
-from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator, ReportGenerator
+from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
 
 def parse_args() -> argparse.Namespace:
@@ -49,11 +49,11 @@ def main() -> None:
     git_service = LocalGitService(repo_path)
     llm_service = MockLLMService()
 
-    report_service: ReportGenerator
-    if args.format == "markdown":
-        report_service = MarkdownReportGenerator()
-    else:
-        report_service = ConsoleReportGenerator()
+    report_generators = {
+        "console": ConsoleReportGenerator,
+        "markdown": MarkdownReportGenerator,
+    }
+    report_service = report_generators[args.format]()
 
     # Initialize Engine with dependencies
     generator = ChronicleGenerator(git_service, llm_service)
@@ -62,13 +62,7 @@ def main() -> None:
         # Generate a story from the last N commits
         analyzed_commits = generator.generate(limit=args.limit)
         story = report_service.generate(analyzed_commits)
-
-        if args.format == "console":
-            print("\n=== Code Evolution Narrative ===\n")
-            print(story)
-            print("\n=== End of Story ===")
-        else:
-            print(story)
+        print(story)
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

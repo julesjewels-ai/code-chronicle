@@ -1,7 +1,6 @@
 import sys
 import unittest
 from unittest.mock import patch, MagicMock
-import os
 # We import main inside tests to ensure mocks work correctly if imports happen at top level
 from main import main
 

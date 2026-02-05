@@ -25,3 +25,7 @@
 ## 2026-03-08 - [Inline Temps in ChronicleGenerator]
 **Observation:** `ChronicleGenerator.generate` used unnecessary temporary variables (`commits`, `results`) to hold intermediate values that were only used once, slightly increasing method length and cognitive load.
 **Action:** Inlined `commits` and `results` directly into the `executor.map` and `join` calls within the `with` statement, reducing line count and consolidating logic flow.
+
+## 2026-03-12 - [Simplified Report Logic]
+**Observation:** `main.py` contained imperative `if/else` logic for selecting report generators and decorating output, which created inconsistency and coupled the CLI to the report format details.
+**Action:** Encapsulated decoration within `ConsoleReportGenerator`. Replaced factory `if/else` in `main.py` with a dictionary dispatch. Reduced cyclomatic complexity and improved cohesion.
