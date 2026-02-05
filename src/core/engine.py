@@ -15,13 +15,12 @@ class ChronicleGenerator:
         # This significantly reduces total time when using real network-based LLM providers.
         # map() preserves the order of results corresponding to the input iterator.
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            # We convert to list to ensure execution completes within the context manager
-            # because executor.shutdown(wait=True) is called on exit.
-            results = list(executor.map(
+            # Stream results directly to avoid blocking until all tasks are complete
+            # and to save memory by not creating an intermediate list.
+            yield from executor.map(
                 self._process_commit,
                 self.git_provider.get_commit_history(limit)
-            ))
-        return iter(results)
+            )
 
     def _process_commit(self, commit: Commit) -> AnalyzedCommit:
         return AnalyzedCommit(

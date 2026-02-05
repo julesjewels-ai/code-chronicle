@@ -19,3 +19,5 @@
 ## 2026-02-12 - [String Parsing Optimization] **Learning:** Restructuring string parsing to defer operations like `rstrip` until after partitioning/splitting can avoid copying the entire string, saving memory and CPU (~2%). Also, aliasing global functions to local variables in tight loops reduced overhead by ~3.5%. **Action:** Optimize hot parsing loops by minimizing intermediate string allocations and using local lookups.
 
 ## 2026-02-13 - [Inlining & Tformat Slicing] **Learning:** Inlining parsing logic and using string slicing (`[:-1]`) with `tformat` (guaranteed newline) outperformed function calls and `rstrip` by ~11% in hot loops. **Action:** Prefer inlining and format-guaranteed slicing for high-throughput stream parsing.
+
+## 2026-02-05 - [Streaming Concurrent Futures] **Learning:** Using `yield from executor.map(...)` inside a `ThreadPoolExecutor` context manager allows for streaming results as they complete, significantly reducing time-to-first-result compared to `list(executor.map(...))`. **Action:** Always prefer `yield from` over `list()` when using `executor.map` if downstream consumers can handle iterators.
