@@ -1,8 +1,9 @@
 import os
 import sys
 from src.cli import parse_args
+from src.interfaces import LLMProvider
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.services.llm import MockLLMService, OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
 
@@ -25,7 +26,17 @@ def main() -> None:
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    llm_service: LLMProvider
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        llm_service = OpenAILLMService(api_key=api_key)
+        if args.format == "console":
+            print("Using OpenAI LLM Service")
+    else:
+        llm_service = MockLLMService()
+        if args.format == "console":
+            print("Using Mock LLM Service (set OPENAI_API_KEY to use real LLM)", file=sys.stderr)
 
     report_generators = {
         "console": ConsoleReportGenerator,

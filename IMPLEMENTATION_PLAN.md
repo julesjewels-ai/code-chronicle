@@ -7,4 +7,4 @@
     - [x] Refactor ChronicleGenerator to return data
     - [x] Implement Console and Markdown Reporters
 - [x] CLI Configuration (Argparse)
-- [ ] Real LLM Integration
+- [x] Real LLM Integration
