@@ -2,9 +2,10 @@ import os
 import sys
 from src.cli import parse_args
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.services.llm import MockLLMService, OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
+from src.interfaces import LLMProvider
 
 def main() -> None:
     args = parse_args()
@@ -25,7 +26,13 @@ def main() -> None:
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    llm_service: LLMProvider
+    if api_key:
+        llm_service = OpenAILLMService(api_key=api_key)
+    else:
+        llm_service = MockLLMService()
 
     report_generators = {
         "console": ConsoleReportGenerator,
