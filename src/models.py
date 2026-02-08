@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class Commit:
     hash_id: str
     message: str
+    diff: str = ""
 
 @dataclass(slots=True)
 class AnalyzedCommit:
