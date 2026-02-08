@@ -29,7 +29,21 @@ class LocalGitService(GitProvider):
                 # Combined ~11% speedup.
                 parts = line.partition('|')
                 if parts[1]:
-                    yield Commit(hash_id=parts[0], message=parts[2][:-1])
+                    hash_id = parts[0]
+                    message = parts[2][:-1]
+
+                    # Fetch diff
+                    # We use check_output to get the full diff content.
+                    # --pretty=format: suppresses the log message in output, leaving only the diff.
+                    diff_cmd = ["git", "-C", self.repo_path, "show", "--pretty=format:", "--patch", hash_id]
+                    try:
+                        # Capture stderr to avoid polluting output on errors, though errors are unlikely if log hash is valid.
+                        diff_output = subprocess.check_output(diff_cmd, text=True, stderr=subprocess.DEVNULL)
+                    except subprocess.CalledProcessError:
+                        # Fallback to empty diff if fetching fails
+                        diff_output = ""
+
+                    yield Commit(hash_id=hash_id, message=message, diff=diff_output)
 
             # Check for errors after processing
             if process.wait() != 0:
