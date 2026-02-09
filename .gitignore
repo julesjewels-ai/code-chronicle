@@ -5,3 +5,8 @@ __pycache__/
 venv/
 .idea/
 .vscode/
+.coverage
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
