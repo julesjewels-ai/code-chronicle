@@ -12,3 +12,10 @@
   - Created tests/test_cli.py using pytest.
   - Refactored tests/test_main.py to use pytest.
   - Verified with pytest, mypy, and ruff.
+2024-05-24: Completed Real LLM Integration.
+  - Implemented OpenAILLMService using OpenAI API.
+  - Updated LocalGitService to fetch and parse commit diffs for better analysis context.
+  - Enhanced Commit model to include diff field.
+  - Updated CLI to accept --api-key and --model arguments.
+  - Refactored main.py to select LLM provider dynamically.
+  - Verified with pytest, mypy, and ruff.

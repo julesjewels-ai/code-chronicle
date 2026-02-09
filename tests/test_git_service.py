@@ -11,7 +11,16 @@ class TestLocalGitService(unittest.TestCase):
     def test_get_commit_history_success(self, mock_popen):
         process_mock = MagicMock()
         # process.stdout needs to be iterable. Since we iterate over it in the loop.
-        process_mock.stdout = iter(["h1|m1\n", "h2|m2\n"])
+        # Mock git log output with diffs
+        output_lines = [
+            "COMMIT_START|h1|m1\n",
+            "\n",
+            "diff --git a/file1 b/file1\n",
+            "index ...\n",
+            "COMMIT_START|h2|m2\n",
+            "diff --git a/file2 b/file2\n"
+        ]
+        process_mock.stdout = iter(output_lines)
         process_mock.wait.return_value = 0
         process_mock.__enter__.return_value = process_mock
 
@@ -22,12 +31,18 @@ class TestLocalGitService(unittest.TestCase):
 
         self.assertEqual(len(commits), 2)
         self.assertEqual(commits[0].hash_id, "h1")
+        self.assertEqual(commits[0].message, "m1")
+        self.assertIn("diff --git a/file1 b/file1", commits[0].diff)
+
+        self.assertEqual(commits[1].hash_id, "h2")
         self.assertEqual(commits[1].message, "m2")
+        self.assertIn("diff --git a/file2 b/file2", commits[1].diff)
 
         # Verify call args
         args, kwargs = mock_popen.call_args
         self.assertEqual(args[0][:5], ["git", "-C", "/tmp/repo", "log", "-n"])
-        self.assertEqual(args[0][6], "--pretty=tformat:%h|%s")
+        # Verify the format string contains COMMIT_START
+        self.assertIn("COMMIT_START|%h|%s", args[0][6])
         self.assertEqual(kwargs['stdout'], subprocess.PIPE)
         self.assertEqual(kwargs['text'], True)
 
