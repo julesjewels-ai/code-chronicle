@@ -1,4 +1,5 @@
 import argparse
+import os
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CodeChronicle: Turn git history into a narrative.")
@@ -20,10 +21,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default="console",
         help="Output format (default: console)"
     )
+    parser.add_argument(
+        "--api-key",
+        help="OpenAI API Key (default: OPENAI_API_KEY env var)"
+    )
+    parser.add_argument(
+        "--model",
+        default="gpt-3.5-turbo",
+        help="OpenAI Model (default: gpt-3.5-turbo)"
+    )
 
     parsed_args = parser.parse_args(args)
 
     if parsed_args.limit < 1:
         parser.error("Limit must be a positive integer.")
+
+    # If api_key is not provided via flag, check environment variable
+    if not parsed_args.api_key:
+        parsed_args.api_key = os.environ.get("OPENAI_API_KEY")
 
     return parsed_args
