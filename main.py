@@ -2,9 +2,10 @@ import os
 import sys
 from src.cli import parse_args
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.services.llm import MockLLMService, OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
+from src.interfaces import LLMProvider
 
 def main() -> None:
     args = parse_args()
@@ -25,7 +26,21 @@ def main() -> None:
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    llm_service: LLMProvider
+
+    if args.api_key:
+        try:
+            llm_service = OpenAILLMService(api_key=args.api_key, model=args.model)
+            if args.format == "console":
+                print(f"Using OpenAI Model: {args.model}")
+        except Exception as e:
+            print(f"Error initializing OpenAI service: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        llm_service = MockLLMService()
+        if args.format == "console":
+            print("Using Mock LLM Service (No API Key provided)")
 
     report_generators = {
         "console": ConsoleReportGenerator,
