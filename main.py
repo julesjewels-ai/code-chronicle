@@ -2,7 +2,8 @@ import os
 import sys
 from src.cli import parse_args
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.interfaces import LLMProvider
+from src.services.llm import MockLLMService, OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
 
@@ -25,7 +26,14 @@ def main() -> None:
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    # Initialize LLM Service
+    llm_service: LLMProvider = MockLLMService()
+    if args.api_key or os.environ.get("OPENAI_API_KEY"):
+        try:
+            llm_service = OpenAILLMService(api_key=args.api_key, model=args.model)
+        except Exception as e:
+            print(f"Warning: Failed to initialize OpenAILLMService: {e}. Falling back to MockLLMService.", file=sys.stderr)
 
     report_generators = {
         "console": ConsoleReportGenerator,
