@@ -6,12 +6,16 @@ def test_defaults():
     assert args.path == "."
     assert args.limit == 5
     assert args.format == "console"
+    assert args.api_key is None
+    assert args.model == "gpt-4o"
 
 def test_custom_args():
-    args = parse_args(["/path/to/repo", "-n", "10", "-f", "markdown"])
+    args = parse_args(["/path/to/repo", "-n", "10", "-f", "markdown", "--api-key", "sk-test", "--model", "gpt-3.5-turbo"])
     assert args.path == "/path/to/repo"
     assert args.limit == 10
     assert args.format == "markdown"
+    assert args.api_key == "sk-test"
+    assert args.model == "gpt-3.5-turbo"
 
 def test_long_args():
     args = parse_args(["--limit", "20", "--format", "console"])
