@@ -6,6 +6,8 @@ def test_defaults():
     assert args.path == "."
     assert args.limit == 5
     assert args.format == "console"
+    assert args.api_key is None
+    assert args.model == "gpt-4o"
 
 def test_custom_args():
     args = parse_args(["/path/to/repo", "-n", "10", "-f", "markdown"])
@@ -29,3 +31,8 @@ def test_invalid_limit():
 def test_invalid_format():
     with pytest.raises(SystemExit):
         parse_args(["-f", "xml"])
+
+def test_llm_args_custom():
+    args = parse_args(["--api-key", "sk-test", "--model", "gpt-3.5-turbo"])
+    assert args.api_key == "sk-test"
+    assert args.model == "gpt-3.5-turbo"
