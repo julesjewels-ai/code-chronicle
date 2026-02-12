@@ -1,0 +1,8 @@
+openai
+python-dotenv
+mock
+pytest
+pytest-mock
+mypy
+ruff
+radon

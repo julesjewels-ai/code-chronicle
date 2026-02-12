@@ -12,3 +12,10 @@
   - Created tests/test_cli.py using pytest.
   - Refactored tests/test_main.py to use pytest.
   - Verified with pytest, mypy, and ruff.
+2024-05-24: Completed Real LLM Integration.
+  - Created requirements.txt with openai and other dependencies.
+  - Implemented OpenAILLMService in src/services/llm.py.
+  - Updated CLI to accept --api-key and --model arguments.
+  - Updated main.py to select LLM service based on API key availability.
+  - Added tests for CLI, LLM service, and main logic.
+  - Validated with pytest, mypy, and ruff.
