@@ -1,0 +1,9 @@
+openai
+moviepy
+python-dotenv
+pytest
+pytest-mock
+mypy
+ruff
+bandit
+pip-tools
