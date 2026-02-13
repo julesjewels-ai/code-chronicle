@@ -41,10 +41,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install pip-audit
-        run: pip install pip-audit
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install dependencies ignoring conflicts
         # Force installation of pinned requirements even if they conflict (e.g., Pillow 12.1.1 vs MoviePy constraints)
         run: pip install --no-deps -r requirements.txt
-      - name: Run pip-audit on installed packages
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        # Scan the environment where dependencies are installed
         run: pip-audit
