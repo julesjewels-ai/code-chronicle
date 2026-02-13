@@ -5,3 +5,10 @@ __pycache__/
 venv/
 .idea/
 .vscode/
+*.mp4
+*.webm
+*.gif
+.mypy_cache/
+.coverage
+htmlcov/
+.pytest_cache/

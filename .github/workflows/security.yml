@@ -1,0 +1,54 @@
+name: Security Audit
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly on Mondays at 8 AM
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  secrets:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sast:
+    name: Subprocess & Code Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Bandit
+        # Focus strictly on high-severity issues and subprocess/os calls
+        run: bandit -r src/ -ll -ii -f json -o bandit-report.json || true
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  deps:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies ignoring conflicts
+        # Force installation of pinned requirements even if they conflict (e.g., Pillow 12.1.1 vs MoviePy constraints)
+        run: pip install --no-deps -r requirements.txt
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        # Scan the environment where dependencies are installed
+        run: pip-audit
