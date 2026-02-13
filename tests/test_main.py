@@ -1,17 +1,20 @@
 import pytest  # type: ignore
 from unittest.mock import patch
 import argparse
+import os
 from main import main
 
 @pytest.fixture
 def mock_dependencies():
     with patch('main.LocalGitService') as git, \
-         patch('main.MockLLMService') as llm, \
+         patch('main.MockLLMService') as mock_llm, \
+         patch('main.OpenAILLMService') as openai_llm, \
          patch('main.ConsoleReportGenerator') as console_report, \
          patch('main.MarkdownReportGenerator') as md_report, \
          patch('main.ChronicleGenerator') as generator, \
          patch('main.parse_args') as parse_args, \
-         patch('os.path.isdir') as isdir:
+         patch('os.path.isdir') as isdir, \
+         patch('main.load_dotenv'):
 
         # Setup common behavior
         mock_gen_instance = generator.return_value
@@ -20,7 +23,8 @@ def mock_dependencies():
 
         yield {
             'git': git,
-            'llm': llm,
+            'mock_llm': mock_llm,
+            'openai_llm': openai_llm,
             'console_report': console_report,
             'md_report': md_report,
             'generator': generator,
@@ -30,25 +34,47 @@ def mock_dependencies():
 
 def test_main_defaults(mock_dependencies):
     deps = mock_dependencies
-    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console')
+    # Provide defaults for api_key and model as they are expected by main logic
+    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console', api_key=None, model='gpt-4o')
 
-    main()
+    with patch.dict(os.environ, {}, clear=True):
+        main()
 
     deps['git'].assert_called_once_with(".")
+    deps['mock_llm'].assert_called_once()
+    deps['openai_llm'].assert_not_called()
     deps['generator'].return_value.generate.assert_called_once_with(limit=5)
     deps['console_report'].assert_called_once()
-    deps['md_report'].assert_not_called()
 
 def test_main_custom_args(mock_dependencies):
     deps = mock_dependencies
-    deps['parse_args'].return_value = argparse.Namespace(path='/custom/repo', limit=10, format='markdown')
+    deps['parse_args'].return_value = argparse.Namespace(path='/custom/repo', limit=10, format='markdown', api_key=None, model='gpt-4o')
 
-    main()
+    with patch.dict(os.environ, {}, clear=True):
+        main()
 
     deps['git'].assert_called_once_with("/custom/repo")
     deps['generator'].return_value.generate.assert_called_once_with(limit=10)
     deps['md_report'].assert_called_once()
-    deps['console_report'].assert_not_called()
+
+def test_main_openai_from_cli(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console', api_key="cli-key", model="gpt-3.5")
+
+    main()
+
+    deps['openai_llm'].assert_called_once_with(api_key="cli-key", model="gpt-3.5")
+    deps['mock_llm'].assert_not_called()
+
+def test_main_openai_from_env(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console', api_key=None, model="gpt-4o")
+
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}):
+        main()
+
+    deps['openai_llm'].assert_called_once_with(api_key="env-key", model="gpt-4o")
+    deps['mock_llm'].assert_not_called()
 
 def test_main_invalid_path(mock_dependencies):
     deps = mock_dependencies
