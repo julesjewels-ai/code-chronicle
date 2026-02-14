@@ -1,12 +1,16 @@
 import os
 import sys
+from dotenv import load_dotenv
 from src.cli import parse_args
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.services.llm import MockLLMService, OpenAILLMService
+from src.interfaces import LLMProvider
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
 
 def main() -> None:
+    load_dotenv()
+
     args = parse_args()
     repo_path = args.path
 
@@ -25,7 +29,16 @@ def main() -> None:
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    api_key = args.api_key or os.getenv("OPENAI_API_KEY")
+    llm_service: LLMProvider
+
+    if api_key:
+        llm_service = OpenAILLMService(api_key=api_key, model=args.model)
+    else:
+        llm_service = MockLLMService()
+        if args.format == "console":
+            print("Notice: No OpenAI API key found. Using Mock LLM Service.", file=sys.stderr)
 
     report_generators = {
         "console": ConsoleReportGenerator,
