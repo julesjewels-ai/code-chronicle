@@ -25,11 +25,9 @@ class LocalGitService(GitProvider):
 
             for line in process.stdout:
                 # Optimization: Inlined parsing logic (avoids function call overhead)
-                # and used slicing [:-1] instead of rstrip('\n') (avoids string scan).
-                # Combined ~11% speedup.
                 parts = line.partition('|')
                 if parts[1]:
-                    yield Commit(hash_id=parts[0], message=parts[2][:-1])
+                    yield Commit(hash_id=parts[0], message=parts[2].rstrip('\n'))
 
             # Check for errors after processing
             if process.wait() != 0:
