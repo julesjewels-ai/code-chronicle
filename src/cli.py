@@ -20,6 +20,15 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default="console",
         help="Output format (default: console)"
     )
+    parser.add_argument(
+        "--api-key",
+        help="OpenAI API Key (can also be set via OPENAI_API_KEY env var)"
+    )
+    parser.add_argument(
+        "--model",
+        default="gpt-4o",
+        help="OpenAI Model to use (default: gpt-4o)"
+    )
 
     parsed_args = parser.parse_args(args)
 

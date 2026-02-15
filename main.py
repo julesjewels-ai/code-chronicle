@@ -1,10 +1,15 @@
 import os
 import sys
+from dotenv import load_dotenv
 from src.cli import parse_args
 from src.services.git import LocalGitService
-from src.services.llm import MockLLMService
+from src.services.llm import MockLLMService, OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
+from src.interfaces import LLMProvider
+
+# Load environment variables from .env file
+load_dotenv()
 
 def main() -> None:
     args = parse_args()
@@ -14,18 +19,23 @@ def main() -> None:
         print(f"Error: The path '{repo_path}' is not a valid directory.", file=sys.stderr)
         sys.exit(1)
 
-    # Only print initialization message to stderr to avoid polluting stdout if piping
-    # or just keep it simple. The original code printed to stdout.
-    # Given the 'console' vs 'markdown' distinction, it's better to keep logging separate from output.
-    # But for 'console' format, it's fine.
-    # I'll print to stderr for info messages if format is markdown?
-    # Let's stick to the previous behavior but maybe cleaner.
     if args.format == "console":
         print(f"Initializing CodeChronicle for: {repo_path}")
 
     # Initialize services
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    llm_service: LLMProvider
+    api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
+
+    if api_key:
+        if args.format == "console":
+            print(f"Using OpenAI Model: {args.model}")
+        llm_service = OpenAILLMService(api_key=api_key, model=args.model)
+    else:
+        if args.format == "console":
+            print("No API Key found. Using Mock LLM Service.")
+        llm_service = MockLLMService()
 
     report_generators = {
         "console": ConsoleReportGenerator,
