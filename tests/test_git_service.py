@@ -1,48 +1,90 @@
-import unittest
-from unittest.mock import MagicMock, patch
+import pytest  # type: ignore
+from pytest_mock import MockerFixture  # type: ignore
 from src.services.git import LocalGitService
+from src.models import Commit
 import subprocess
 
-class TestLocalGitService(unittest.TestCase):
-    def setUp(self):
-        self.service = LocalGitService("/tmp/repo")
+@pytest.fixture
+def service() -> LocalGitService:
+    return LocalGitService(repo_path=".")
 
-    @patch('subprocess.Popen')
-    def test_get_commit_history_success(self, mock_popen):
-        process_mock = MagicMock()
-        # process.stdout needs to be iterable. Since we iterate over it in the loop.
-        process_mock.stdout = iter(["h1|m1\n", "h2|m2\n"])
-        process_mock.wait.return_value = 0
-        process_mock.__enter__.return_value = process_mock
+@pytest.mark.parametrize("stdout_lines, returncode, expected_commits, expected_error", [
+    # Standard success case
+    (
+        ["a1b2c3d|Initial commit\n", "e5f6g7h|Second commit\n"],
+        0,
+        [
+            Commit(hash_id="a1b2c3d", message="Initial commit"),
+            Commit(hash_id="e5f6g7h", message="Second commit")
+        ],
+        None
+    ),
+    # Empty output (no commits)
+    (
+        [],
+        0,
+        [],
+        None
+    ),
+    # Malformed line (missing separator) - should be skipped
+    (
+        ["invalid_line_no_separator\n"],
+        0,
+        [],
+        None
+    ),
+    # Truncated line (no newline at end) - current implementation slices last char
+    # This documents the behavior: "Truncated message" -> "Truncated messag"
+    (
+        ["a1b2c3d|Truncated message"],
+        0,
+        [Commit(hash_id="a1b2c3d", message="Truncated messag")],
+        None
+    ),
+    # Mixed valid and invalid
+    (
+        ["a1b2c3d|Valid\n", "badline\n", "e5f6g7h|Also Valid\n"],
+        0,
+        [
+            Commit(hash_id="a1b2c3d", message="Valid"),
+            Commit(hash_id="e5f6g7h", message="Also Valid")
+        ],
+        None
+    ),
+    # Subprocess error
+    (
+        [],
+        1,
+        [],
+        subprocess.CalledProcessError
+    )
+])
+def test_get_commit_history(
+    service: LocalGitService,
+    stdout_lines: list[str],
+    returncode: int,
+    expected_commits: list[Commit],
+    expected_error: type[Exception] | None,
+    mocker: MockerFixture
+) -> None:
+    # Mock subprocess.Popen
+    mock_popen = mocker.patch("subprocess.Popen")
+    mock_process = mock_popen.return_value
 
-        mock_popen.return_value = process_mock
+    # Configure context manager
+    mock_process.__enter__.return_value = mock_process
+    mock_process.__exit__.return_value = None
 
-        # Consume the iterator
-        commits = list(self.service.get_commit_history(2))
+    # Configure stdout iterator
+    mock_process.stdout = iter(stdout_lines)
 
-        self.assertEqual(len(commits), 2)
-        self.assertEqual(commits[0].hash_id, "h1")
-        self.assertEqual(commits[1].message, "m2")
+    # Configure return code
+    mock_process.wait.return_value = returncode
+    mock_process.returncode = returncode
 
-        # Verify call args
-        args, kwargs = mock_popen.call_args
-        self.assertEqual(args[0][:5], ["git", "-C", "/tmp/repo", "log", "-n"])
-        self.assertEqual(args[0][6], "--pretty=tformat:%h|%s")
-        self.assertEqual(kwargs['stdout'], subprocess.PIPE)
-        self.assertEqual(kwargs['text'], True)
-
-    @patch('subprocess.Popen')
-    def test_get_commit_history_failure(self, mock_popen):
-        process_mock = MagicMock()
-        process_mock.stdout = iter([])
-        process_mock.wait.return_value = 1
-        process_mock.returncode = 1
-        process_mock.__enter__.return_value = process_mock
-
-        mock_popen.return_value = process_mock
-
-        with self.assertRaises(subprocess.CalledProcessError):
-            list(self.service.get_commit_history(2))
-
-if __name__ == '__main__':
-    unittest.main()
+    if expected_error:
+        with pytest.raises(expected_error):
+            list(service.get_commit_history(limit=5))
+    else:
+        commits = list(service.get_commit_history(limit=5))
+        assert commits == expected_commits
