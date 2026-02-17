@@ -1,48 +1,67 @@
-import unittest
-from unittest.mock import MagicMock, patch
-from src.services.git import LocalGitService
+import pytest  # type: ignore
 import subprocess
+from unittest.mock import MagicMock
+from src.services.git import LocalGitService
+from src.models import Commit
 
-class TestLocalGitService(unittest.TestCase):
-    def setUp(self):
-        self.service = LocalGitService("/tmp/repo")
+@pytest.fixture
+def git_service() -> LocalGitService:
+    return LocalGitService("/tmp/repo")
 
-    @patch('subprocess.Popen')
-    def test_get_commit_history_success(self, mock_popen):
-        process_mock = MagicMock()
-        # process.stdout needs to be iterable. Since we iterate over it in the loop.
-        process_mock.stdout = iter(["h1|m1\n", "h2|m2\n"])
-        process_mock.wait.return_value = 0
-        process_mock.__enter__.return_value = process_mock
+@pytest.mark.parametrize("stdout_lines, return_code, expected_commits, expected_exception", [
+    (
+        ["h1|m1\n", "h2|m2\n"],
+        0,
+        [Commit(hash_id="h1", message="m1"), Commit(hash_id="h2", message="m2")],
+        None
+    ),
+    (
+        [],
+        0,
+        [],
+        None
+    ),
+    (
+        ["malformed line\n", "h3|m3\n"],
+        0,
+        [Commit(hash_id="h3", message="m3")],
+        None
+    ),
+    (
+        [],
+        1,
+        None,
+        subprocess.CalledProcessError
+    )
+])
+def test_get_commit_history(
+    mocker,
+    git_service: LocalGitService,
+    stdout_lines: list[str],
+    return_code: int,
+    expected_commits: list[Commit] | None,
+    expected_exception: type[Exception] | None
+) -> None:
+    # Arrange
+    mock_process = MagicMock()
+    mock_process.stdout = iter(stdout_lines)
+    mock_process.wait.return_value = return_code
+    mock_process.returncode = return_code
+    mock_process.__enter__.return_value = mock_process
 
-        mock_popen.return_value = process_mock
+    mock_popen = mocker.patch('subprocess.Popen', return_value=mock_process)
 
-        # Consume the iterator
-        commits = list(self.service.get_commit_history(2))
+    # Act & Assert
+    if expected_exception:
+        with pytest.raises(expected_exception):
+            list(git_service.get_commit_history(5))
+    else:
+        commits = list(git_service.get_commit_history(5))
+        assert commits == expected_commits
 
-        self.assertEqual(len(commits), 2)
-        self.assertEqual(commits[0].hash_id, "h1")
-        self.assertEqual(commits[1].message, "m2")
-
-        # Verify call args
+        # Verify Popen called correctly
         args, kwargs = mock_popen.call_args
-        self.assertEqual(args[0][:5], ["git", "-C", "/tmp/repo", "log", "-n"])
-        self.assertEqual(args[0][6], "--pretty=tformat:%h|%s")
-        self.assertEqual(kwargs['stdout'], subprocess.PIPE)
-        self.assertEqual(kwargs['text'], True)
-
-    @patch('subprocess.Popen')
-    def test_get_commit_history_failure(self, mock_popen):
-        process_mock = MagicMock()
-        process_mock.stdout = iter([])
-        process_mock.wait.return_value = 1
-        process_mock.returncode = 1
-        process_mock.__enter__.return_value = process_mock
-
-        mock_popen.return_value = process_mock
-
-        with self.assertRaises(subprocess.CalledProcessError):
-            list(self.service.get_commit_history(2))
-
-if __name__ == '__main__':
-    unittest.main()
+        assert args[0][:5] == ["git", "-C", "/tmp/repo", "log", "-n"]
+        assert args[0][6] == "--pretty=tformat:%h|%s"
+        assert kwargs['stdout'] == subprocess.PIPE
+        assert kwargs['text'] is True
