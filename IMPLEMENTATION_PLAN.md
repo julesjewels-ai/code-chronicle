@@ -7,4 +7,8 @@
     - [x] Refactor ChronicleGenerator to return data
     - [x] Implement Console and Markdown Reporters
 - [x] CLI Configuration (Argparse)
-- [ ] Real LLM Integration
+- [x] Real LLM Integration
+    - [x] `OpenAILLMService` implementation
+    - [x] CLI args for API key and model
+    - [x] Integration in `main.py`
+    - [x] Dependency audit and cleanup (removed unused `moviepy`)

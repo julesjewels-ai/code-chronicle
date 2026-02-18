@@ -7,10 +7,12 @@ from main import main
 def mock_dependencies():
     with patch('main.LocalGitService') as git, \
          patch('main.MockLLMService') as llm, \
+         patch('main.OpenAILLMService') as openai_llm, \
          patch('main.ConsoleReportGenerator') as console_report, \
          patch('main.MarkdownReportGenerator') as md_report, \
          patch('main.ChronicleGenerator') as generator, \
          patch('main.parse_args') as parse_args, \
+         patch('main.load_dotenv') as load_dotenv, \
          patch('os.path.isdir') as isdir:
 
         # Setup common behavior
@@ -21,27 +23,47 @@ def mock_dependencies():
         yield {
             'git': git,
             'llm': llm,
+            'openai_llm': openai_llm,
             'console_report': console_report,
             'md_report': md_report,
             'generator': generator,
             'parse_args': parse_args,
+            'load_dotenv': load_dotenv,
             'isdir': isdir
         }
 
 def test_main_defaults(mock_dependencies):
     deps = mock_dependencies
-    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console')
+    deps['parse_args'].return_value = argparse.Namespace(
+        path='.', limit=5, format='console', api_key=None, model='gpt-4o'
+    )
 
     main()
 
+    deps['load_dotenv'].assert_called_once()
     deps['git'].assert_called_once_with(".")
+    deps['llm'].assert_called_once()
+    deps['openai_llm'].assert_not_called()
     deps['generator'].return_value.generate.assert_called_once_with(limit=5)
     deps['console_report'].assert_called_once()
     deps['md_report'].assert_not_called()
 
+def test_main_with_api_key(mock_dependencies):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(
+        path='.', limit=5, format='console', api_key="test-key", model="gpt-3.5"
+    )
+
+    main()
+
+    deps['openai_llm'].assert_called_once_with(api_key="test-key", model="gpt-3.5")
+    deps['llm'].assert_not_called()
+
 def test_main_custom_args(mock_dependencies):
     deps = mock_dependencies
-    deps['parse_args'].return_value = argparse.Namespace(path='/custom/repo', limit=10, format='markdown')
+    deps['parse_args'].return_value = argparse.Namespace(
+        path='/custom/repo', limit=10, format='markdown', api_key=None, model='gpt-4o'
+    )
 
     main()
 
@@ -52,7 +74,9 @@ def test_main_custom_args(mock_dependencies):
 
 def test_main_invalid_path(mock_dependencies):
     deps = mock_dependencies
-    deps['parse_args'].return_value = argparse.Namespace(path='/invalid/path', limit=5, format='console')
+    deps['parse_args'].return_value = argparse.Namespace(
+        path='/invalid/path', limit=5, format='console', api_key=None, model='gpt-4o'
+    )
     deps['isdir'].return_value = False
 
     # We verify it exits

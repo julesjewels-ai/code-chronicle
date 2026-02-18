@@ -1,8 +1,11 @@
 import os
 import sys
+from dotenv import load_dotenv
 from src.cli import parse_args
+from src.interfaces import LLMProvider
 from src.services.git import LocalGitService
 from src.services.llm import MockLLMService
+from src.services.openai_service import OpenAILLMService
 from src.services.report import ConsoleReportGenerator, MarkdownReportGenerator
 from src.core.engine import ChronicleGenerator
 
@@ -24,8 +27,16 @@ def main() -> None:
         print(f"Initializing CodeChronicle for: {repo_path}")
 
     # Initialize services
+    load_dotenv()
     git_service = LocalGitService(repo_path)
-    llm_service = MockLLMService()
+
+    llm_service: LLMProvider
+    api_key = args.api_key or os.getenv("OPENAI_API_KEY")
+
+    if api_key:
+        llm_service = OpenAILLMService(api_key=api_key, model=args.model)
+    else:
+        llm_service = MockLLMService()
 
     report_generators = {
         "console": ConsoleReportGenerator,
