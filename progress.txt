@@ -19,3 +19,7 @@
   - Added tests for `OpenAILLMService` and updated `main.py` tests.
   - Resolved dependency conflict between `pillow` and `moviepy`.
   - Verified with pytest (100% pass), mypy (zero errors), and ruff.
+2024-05-23: Fixed Security Vulnerability.
+  - Removed unused dependency `moviepy` which introduced vulnerable `pillow` version.
+  - Updated `requirements.txt` via `pip-compile`.
+  - Verified `pip-audit` passes.

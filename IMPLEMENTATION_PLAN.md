@@ -11,3 +11,4 @@
     - [x] `OpenAILLMService` implementation
     - [x] CLI args for API key and model
     - [x] Integration in `main.py`
+    - [x] Dependency audit and cleanup (removed unused `moviepy`)
