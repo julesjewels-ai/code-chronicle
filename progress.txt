@@ -12,3 +12,10 @@
   - Created tests/test_cli.py using pytest.
   - Refactored tests/test_main.py to use pytest.
   - Verified with pytest, mypy, and ruff.
+2024-05-23: Completed Real LLM Integration.
+  - Added `--api-key` and `--model` CLI arguments.
+  - Implemented `OpenAILLMService` using `openai` library.
+  - Integrated `OpenAILLMService` into `main.py` with `dotenv` support.
+  - Added tests for `OpenAILLMService` and updated `main.py` tests.
+  - Resolved dependency conflict between `pillow` and `moviepy`.
+  - Verified with pytest (100% pass), mypy (zero errors), and ruff.

@@ -18,6 +18,16 @@ def test_long_args():
     assert args.limit == 20
     assert args.format == "console"
 
+def test_llm_args():
+    args = parse_args(["--api-key", "sk-12345", "--model", "gpt-3.5-turbo"])
+    assert args.api_key == "sk-12345"
+    assert args.model == "gpt-3.5-turbo"
+
+def test_llm_defaults():
+    args = parse_args([])
+    assert args.api_key is None
+    assert args.model == "gpt-4o"
+
 def test_invalid_limit():
     # argparse calls sys.exit(2) on error
     with pytest.raises(SystemExit):
