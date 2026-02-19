@@ -7,3 +7,4 @@ mypy
 ruff
 bandit
 pip-tools
+pillow<12.0
