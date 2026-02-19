@@ -12,3 +12,10 @@
   - Created tests/test_cli.py using pytest.
   - Refactored tests/test_main.py to use pytest.
   - Verified with pytest, mypy, and ruff.
+2024-05-24: Integrated OpenAILLMService.
+  - Implemented OpenAILLMService in src/services/openai_service.py using OpenAI API.
+  - Updated main.py to use OpenAILLMService if OPENAI_API_KEY is present, falling back to MockLLMService.
+  - Added tests/test_openai_service.py with unit tests mocking OpenAI client.
+  - Updated tests/test_main.py to verify service selection logic.
+  - Resolved dependency conflict between moviepy and pillow by pinning pillow<12.0 in requirements.in.
+  - Verified with pytest (22 passed), mypy, and ruff.
