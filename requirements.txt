@@ -67,8 +67,9 @@ packaging==26.0
     #   wheel
 pathspec==1.0.4
     # via mypy
-pillow==12.1.1
+pillow==11.3.0
     # via
+    #   -r requirements.in
     #   imageio
     #   moviepy
 pip-tools==7.5.3
