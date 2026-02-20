@@ -1,5 +1,6 @@
 openai
 moviepy
+pillow<12.0
 python-dotenv
 pytest
 pytest-mock

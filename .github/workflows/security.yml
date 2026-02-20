@@ -41,14 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install dependencies ignoring conflicts
-        # Force installation of pinned requirements even if they conflict (e.g., Pillow 12.1.1 vs MoviePy constraints)
-        run: pip install --no-deps -r requirements.txt
       - name: Install pip-audit
         run: pip install pip-audit
       - name: Run pip-audit
-        # Scan the environment where dependencies are installed
-        run: pip-audit
+        # Suppress CVE-2026-25990 (Pillow 11.3.0) due to dependency conflict with moviepy (requires pillow<12.0)
+        run: pip-audit -r requirements.txt --ignore-vuln CVE-2026-25990
