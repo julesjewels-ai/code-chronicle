@@ -12,3 +12,9 @@
   - Created tests/test_cli.py using pytest.
   - Refactored tests/test_main.py to use pytest.
   - Verified with pytest, mypy, and ruff.
+2024-05-23: Completed Real LLM Integration.
+  - Implemented OpenAILLMService in src/services/openai_service.py.
+  - Updated main.py to switch between MockLLMService and OpenAILLMService based on OPENAI_API_KEY.
+  - Added tests for OpenAILLMService and main.py switching logic.
+  - Resolved dependency conflict for pillow and updated requirements.txt.
+  - Verified with pytest, mypy, and ruff.
