@@ -1,32 +1,31 @@
 import pytest  # type: ignore
-from unittest.mock import patch
 import argparse
 from main import main
 
 @pytest.fixture
-def mock_dependencies():
-    with patch('main.LocalGitService') as git, \
-         patch('main.MockLLMService') as llm, \
-         patch('main.ConsoleReportGenerator') as console_report, \
-         patch('main.MarkdownReportGenerator') as md_report, \
-         patch('main.ChronicleGenerator') as generator, \
-         patch('main.parse_args') as parse_args, \
-         patch('os.path.isdir') as isdir:
+def mock_dependencies(mocker):
+    git = mocker.patch('main.LocalGitService')
+    llm = mocker.patch('main.MockLLMService')
+    console_report = mocker.patch('main.ConsoleReportGenerator')
+    md_report = mocker.patch('main.MarkdownReportGenerator')
+    generator = mocker.patch('main.ChronicleGenerator')
+    parse_args = mocker.patch('main.parse_args')
+    isdir = mocker.patch('os.path.isdir')
 
-        # Setup common behavior
-        mock_gen_instance = generator.return_value
-        mock_gen_instance.generate.return_value = []
-        isdir.return_value = True
+    # Setup common behavior
+    mock_gen_instance = generator.return_value
+    mock_gen_instance.generate.return_value = []
+    isdir.return_value = True
 
-        yield {
-            'git': git,
-            'llm': llm,
-            'console_report': console_report,
-            'md_report': md_report,
-            'generator': generator,
-            'parse_args': parse_args,
-            'isdir': isdir
-        }
+    return {
+        'git': git,
+        'llm': llm,
+        'console_report': console_report,
+        'md_report': md_report,
+        'generator': generator,
+        'parse_args': parse_args,
+        'isdir': isdir
+    }
 
 def test_main_defaults(mock_dependencies):
     deps = mock_dependencies
@@ -50,11 +49,34 @@ def test_main_custom_args(mock_dependencies):
     deps['md_report'].assert_called_once()
     deps['console_report'].assert_not_called()
 
-def test_main_invalid_path(mock_dependencies):
+def test_main_invalid_path(mock_dependencies, capsys):
     deps = mock_dependencies
     deps['parse_args'].return_value = argparse.Namespace(path='/invalid/path', limit=5, format='console')
     deps['isdir'].return_value = False
 
-    # We verify it exits
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit) as excinfo:
         main()
+
+    assert excinfo.value.code == 1
+
+    captured = capsys.readouterr()
+    assert "Error: The path '/invalid/path' is not a valid directory." in captured.err
+
+@pytest.mark.parametrize("exception_cls, expected_msg", [
+    (Exception, "Generic Error"),
+    (ValueError, "Value Error"),
+])
+def test_main_exception(mock_dependencies, capsys, exception_cls, expected_msg):
+    deps = mock_dependencies
+    deps['parse_args'].return_value = argparse.Namespace(path='.', limit=5, format='console')
+
+    # Mock generator to raise Exception
+    deps['generator'].return_value.generate.side_effect = exception_cls(expected_msg)
+
+    with pytest.raises(SystemExit) as excinfo:
+        main()
+
+    assert excinfo.value.code == 1
+
+    captured = capsys.readouterr()
+    assert f"Error: {expected_msg}" in captured.err
